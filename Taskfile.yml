@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+tasks:
+  up:
+    desc: Start Ermes services
+    cmds:
+      - docker compose up -d
+
+  down:
+    desc: Stop Ermes services
+    cmds:
+      - docker compose down
+
+  build:
+    desc: Build Ermes services
+    cmds:
+      - docker compose build
+
+  logs:
+    desc: Follow Ermes logs
+    cmds:
+      - docker compose logs -f
+
+  ps:
+    desc: Show Ermes services
+    cmds:
+      - docker compose ps

@@ -1,0 +1,20 @@
+services:
+  config-agent:
+    build:
+      context: ../ermes-agents/agents/config-agent
+      dockerfile: Dockerfile
+    volumes:
+      - data-config-agent-data:/home/user/app/data
+      - data-config-agent-training:/home/user/app/training_data
+    ports:
+      - "9998:9998"
+
+networks:
+  default:
+    name: ermes
+
+volumes:
+  data-config-agent-data:
+    external: true
+  data-config-agent-training:
+    external: true
