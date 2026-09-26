@@ -1,0 +1,30 @@
+{
+  "folders": [
+    {
+      "name": "stack",
+      "path": "."
+    },
+    // {
+    //   "name": "gateway",
+    //   "path": "../ermes-gateway"
+    // },
+    // {
+    //   "name": "orchestrator",
+    //   "path": "../ermes-orchestrator"
+    // },
+    {
+      "name": "mcp",
+      "path": "../ermes-mcp"
+    },
+    {
+      "name": "agents",
+      "path": "../ermes-agents"
+    }
+  ],
+
+  "settings": {
+    "files.exclude": {
+      "**/.git": true
+    }
+  }
+}
