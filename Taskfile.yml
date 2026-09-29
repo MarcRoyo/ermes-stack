@@ -2,9 +2,23 @@
 
 version: '3'
 
+vars:
+  DATA_ROOT:
+    sh: 'printf "%s" "${ERMES_DATA_ROOT:-$HOME/.local/share/ermes}"'
+
 tasks:
+  init:data:
+    cmds:
+      - mkdir -p "{{.DATA_ROOT}}/music-agent"
+      - mkdir -p "{{.DATA_ROOT}}/config-agent/data"
+      - mkdir -p "{{.DATA_ROOT}}/config-agent/training"
+      - mkdir -p "{{.DATA_ROOT}}/mcp/delta"
   up:
     desc: Start Ermes services
+    deps:
+      - init:data
+    env:
+      ERMES_DATA_ROOT: '{{.DATA_ROOT}}'
     cmds:
       - docker compose up -d
 
