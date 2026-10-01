@@ -2,42 +2,38 @@
 
 version: '3'
 
-vars:
-  DATA_ROOT:
-    sh: 'printf "%s" "${ERMES_DATA_ROOT:-$HOME/.local/share/ermes}"'
-
 tasks:
   init:data:
+    desc: Initialize Ermes data directories
     cmds:
-      - mkdir -p "{{.DATA_ROOT}}/music-agent"
-      - mkdir -p "{{.DATA_ROOT}}/config-agent/data"
-      - mkdir -p "{{.DATA_ROOT}}/config-agent/training"
-      - mkdir -p "{{.DATA_ROOT}}/mcp/delta"
+      - poetry run python -m tools.compose init
+
   up:
     desc: Start Ermes services
-    deps:
-      - init:data
-    env:
-      ERMES_DATA_ROOT: '{{.DATA_ROOT}}'
     cmds:
-      - docker compose up -d
+      - poetry run python -m tools.compose up -d
 
   down:
     desc: Stop Ermes services
     cmds:
-      - docker compose down
+      - poetry run python -m tools.compose down
 
   build:
     desc: Build Ermes services
     cmds:
-      - docker compose build
+      - poetry run python -m tools.compose build
 
   logs:
     desc: Follow Ermes logs
     cmds:
-      - docker compose logs -f
+      - poetry run python -m tools.compose logs -f
 
   ps:
     desc: Show Ermes services
     cmds:
-      - docker compose ps
+      - poetry run python -m tools.compose ps
+
+  compose:config:
+    desc: Show resolved Docker Compose configuration
+    cmds:
+      - poetry run python -m tools.compose config
