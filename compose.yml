@@ -23,6 +23,9 @@ services:
       - ${ERMES_DATA_ROOT}/config-agent/training:/home/user/app/training_data
     ports:
       - "9998:9998"
+    depends_on:
+      standalone:
+        condition: service_healthy
   mcp-server:
     build:
       context: ../ermes-mcp
@@ -31,6 +34,9 @@ services:
       - ${ERMES_DATA_ROOT}/mcp/mcp-delta-data:/home/user/app/delta_data
     ports:
       - "8182:8182"
+    depends_on:
+      standalone:
+        condition: service_healthy
   etcd:
     container_name: milvus-etcd
     image: quay.io/coreos/etcd:v3.5.18
@@ -50,10 +56,10 @@ services:
 
   minio:
     container_name: milvus-minio
-    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    image: quay.io/minio/aistor/minio:RELEASE.2026-08-07T18-34-35Z
     environment:
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
     ports:
       - "9001:9001"
       - "9000:9000"
@@ -88,8 +94,11 @@ services:
       - "19530:19530"
       - "9091:9091"
     depends_on:
-      - "etcd"
-      - "minio"
+      etcd:
+        condition: service_healthy
+
+      minio:
+        condition: service_healthy
 
 networks:
   default:
