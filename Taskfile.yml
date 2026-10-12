@@ -8,6 +8,12 @@ tasks:
     cmds:
       - poetry run python -m tools.compose init
 
+  prepare:mcp:
+    desc: Prepare MCP server
+    dir: ../ermes-mcp
+    cmds:
+      - task prepare
+
   up:
     desc: Start Ermes services
     cmds:
@@ -20,13 +26,20 @@ tasks:
 
   build:
     desc: Build Ermes services
+    deps:
+      - prepare:mcp
     cmds:
       - poetry run python -m tools.compose build
 
-  logs:
+  follow:
     desc: Follow Ermes logs
     cmds:
-      - poetry run python -m tools.compose logs -f
+      - poetry run python -m tools.compose logs -f {{.CLI_ARGS}}
+
+  logs:
+    desc: Show Ermes logs
+    cmds:
+      - poetry run python -m tools.compose logs {{.CLI_ARGS}}
 
   ps:
     desc: Show Ermes services
