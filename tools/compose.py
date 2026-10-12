@@ -3,13 +3,12 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
-
+import json
 import yaml
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 CONFIG_FILE = ROOT_DIR / "config.yaml"
-
 
 def load_config() -> dict[str, Any]:
     if not CONFIG_FILE.exists():
@@ -133,6 +132,266 @@ def run_compose(
     return result.returncode
 
 
+def run_command(
+    command: list[str],
+    env: dict[str, str],
+) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(
+            command,
+            cwd=ROOT_DIR,
+            env=env,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            f"Command not found: {command[0]}"
+        ) from exc
+
+def get_compose_services(
+    env: dict[str, str],
+) -> list[str]:
+    result = run_command(
+        [
+            "docker",
+            "compose",
+            "config",
+            "--services",
+        ],
+        env,
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"Unable to get Compose services:\n{result.stderr}"
+        )
+
+    return [
+        line.strip()
+        for line in result.stdout.splitlines()
+        if line.strip()
+    ]
+
+def get_compose_ps(
+    env: dict[str, str],
+) -> list[dict[str, Any]]:
+    result = run_command(
+        [
+            "docker",
+            "compose",
+            "ps",
+            "--all",
+            "--format",
+            "json",
+        ],
+        env,
+    )
+
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"Unable to get Compose status:\n{result.stderr}"
+        )
+
+    output = result.stdout.strip()
+
+    if not output:
+        return []
+
+    try:
+        data = json.loads(output)
+
+        if isinstance(data, list):
+            return data
+
+        if isinstance(data, dict):
+            return [data]
+
+    except json.JSONDecodeError:
+        pass
+
+    # Compatibility with Compose versions that emit
+    # one JSON object per line.
+    containers = []
+
+    for line in output.splitlines():
+        line = line.strip()
+
+        if not line:
+            continue
+
+        try:
+            containers.append(json.loads(line))
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "Unable to parse 'docker compose ps' output."
+            ) from exc
+
+    return containers
+
+def show_status(config: dict[str, Any]) -> int:
+    env = build_environment(config)
+
+    services = get_compose_services(env)
+    containers = get_compose_ps(env)
+
+    containers_by_service = {
+        container.get("Service"): container
+        for container in containers
+        if container.get("Service")
+    }
+
+    rows = []
+
+    for service in services:
+        container = containers_by_service.get(service)
+
+        if container is None:
+            status = "MISSING"
+            detail = "container not created"
+
+        else:
+            state = str(container.get("State", "")).lower()
+            health = str(container.get("Health", "")).lower()
+            compose_status = str(container.get("Status", "")).lower()
+
+            if not health:
+                if "(healthy)" in compose_status:
+                    health = "healthy"
+                elif "(unhealthy)" in compose_status:
+                    health = "unhealthy"
+                elif "(health: starting)" in compose_status:
+                    health = "starting"
+
+            if state == "running":
+                if health == "healthy":
+                    status = "HEALTHY"
+                    detail = "running"
+
+                elif health == "starting":
+                    status = "STARTING"
+                    detail = "health check pending"
+
+                elif health == "unhealthy":
+                    status = "UNHEALTHY"
+                    detail = "health check failed"
+
+                else:
+                    status = "RUNNING"
+                    detail = "no health check"
+
+            elif state in {
+                "exited",
+                "dead",
+                "removing",
+            }:
+                status = "STOPPED"
+
+                exit_code = container.get("ExitCode")
+
+                if exit_code is not None:
+                    detail = f"exit code {exit_code}"
+                else:
+                    detail = state
+
+            elif state:
+                status = state.upper()
+                detail = ""
+
+            else:
+                status = "UNKNOWN"
+                detail = ""
+
+        rows.append(
+            (
+                service,
+                status,
+                detail,
+            )
+        )
+
+    service_width = max(
+        len("SERVICE"),
+        *(len(row[0]) for row in rows),
+    )
+
+    status_width = max(
+        len("STATUS"),
+        *(len(row[1]) for row in rows),
+    )
+
+    symbols = {
+        "HEALTHY": "✓",
+        "RUNNING": "●",
+        "STARTING": "…",
+        "UNHEALTHY": "✗",
+        "STOPPED": "✗",
+        "MISSING": "✗",
+        "UNKNOWN": "?",
+    }
+
+    colors = {
+        "HEALTHY": "\033[32m",    # green
+        "RUNNING": "\033[36m",    # cyan
+        "STARTING": "\033[33m",   # yellow
+        "UNHEALTHY": "\033[31m",  # red
+        "STOPPED": "\033[31m",    # red
+        "MISSING": "\033[31m",    # red
+        "UNKNOWN": "\033[35m",    # magenta
+    }
+
+    reset = "\033[0m"
+
+    print()
+    print(
+        f"{'SERVICE':<{service_width}}  "
+        f"{'STATUS':<{status_width + 2}}  "
+        f"DETAIL"
+    )
+
+    print(
+        f"{'-' * service_width}  "
+        f"{'-' * (status_width + 2)}  "
+        f"{'-' * 24}"
+    )
+
+    for service, status, detail in rows:
+        symbol = symbols.get(status, "!")
+        color = colors.get(status, "")
+
+        status_text = f"{symbol} {status}"
+
+        print(
+            f"{service:<{service_width}}  "
+            f"{color}{status_text:<{status_width + 2}}{reset}  "
+            f"{detail}"
+        )
+
+    print()
+
+    running_ok = sum(
+        1
+        for _, status, _ in rows
+        if status in {"HEALTHY", "RUNNING"}
+    )
+
+    total = len(rows)
+
+    if running_ok == total:
+        print(
+            f"\033[32mAll {total} services are running correctly."
+            f"{reset}"
+        )
+    else:
+        print(
+            f"\033[33m{running_ok}/{total} services are running correctly."
+            f"{reset}"
+        )
+
+    # Informational command: never fail Task.
+    return 0
+
 def main() -> int:
     try:
         config = load_config()
@@ -158,6 +417,9 @@ def main() -> int:
         if command == "init":
             init_data(config)
             return 0
+
+        if command == "status":
+            return show_status(config)
 
         # Commands that may require persistent directories.
         if command in {
