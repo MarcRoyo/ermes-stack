@@ -55,36 +55,54 @@ def build_environment(config: dict[str, Any]) -> dict[str, str]:
     return env
 
 
-def get_data_root(config: dict[str, Any]) -> Path:
+# def get_data_root(config: dict[str, Any]) -> Path:
+#     config_env = get_config_env(config)
+
+#     data_root = config_env.get("ERMES_DATA_ROOT")
+
+#     if not data_root:
+#         raise RuntimeError(
+#             "ERMES_DATA_ROOT is not defined in config.yaml."
+#         )
+
+#     return Path(data_root).expanduser().resolve()
+
+
+def init_data(config: dict[str, Any]) -> None:
     config_env = get_config_env(config)
 
-    data_root = config_env.get("ERMES_DATA_ROOT")
+    ermes_data_root = config_env.get("ERMES_DATA_ROOT")
+    docker_volume_directory = config_env.get("DOCKER_VOLUME_DIRECTORY")
 
-    if not data_root:
+    if not ermes_data_root:
         raise RuntimeError(
             "ERMES_DATA_ROOT is not defined in config.yaml."
         )
 
-    return Path(data_root).expanduser().resolve()
+    if not docker_volume_directory:
+        raise RuntimeError(
+            "DOCKER_VOLUME_DIRECTORY is not defined in config.yaml."
+        )
 
-
-def init_data(config: dict[str, Any]) -> None:
-    data_root = get_data_root(config)
+    data_root = Path(ermes_data_root).expanduser().resolve()
+    milvus_root = Path(docker_volume_directory).expanduser().resolve()
 
     directories = [
         data_root / "music-agent" / "data",
         data_root / "config-agent" / "data",
         data_root / "config-agent" / "training",
         data_root / "mcp" / "mcp-delta-data",
+
+        milvus_root / "volumes" / "etcd",
+        milvus_root / "volumes" / "minio",
+        milvus_root / "volumes" / "milvus",
     ]
 
     for directory in directories:
-        directory.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
+        directory.mkdir(parents=True, exist_ok=True)
 
     print(f"Ermes data root: {data_root}")
+    print(f"Milvus volume root: {milvus_root}")
 
 
 def run_compose(
