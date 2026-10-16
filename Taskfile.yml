@@ -37,7 +37,7 @@ tasks:
       - poetry run python -m tools.compose logs -f {{.CLI_ARGS}}
 
   logs:
-    desc: Show Ermes logs
+    desc: Show Ermes logs. It can be limited to a specific service by passing the service name as an argument. 
     cmds:
       - poetry run python -m tools.compose logs {{.CLI_ARGS}}
 
