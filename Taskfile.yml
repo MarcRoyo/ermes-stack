@@ -31,15 +31,39 @@ tasks:
       - task: prepare:mcp
       - poetry run python -m tools.compose build
 
+  logs:
+    desc: Show Ermes logs
+    cmds:
+      - poetry run python -m tools.logs logs
+
+  "logs:*": # we put * in quotes to avoid wrong behaviour of the YAML parser
+    desc: Show logs for one service
+    vars:
+      SERVICE: '{{index .MATCH 0}}'
+    cmds:
+      - poetry run python -m tools.logs logs {{.SERVICE}}
+
   follow:
     desc: Follow Ermes logs
     cmds:
-      - poetry run python -m tools.compose logs -f {{.CLI_ARGS}}
+      - poetry run python -m tools.logs follow
 
-  logs:
-    desc: Show Ermes logs. It can be limited to a specific service by passing the service name as an argument. 
+  "follow:*":
+    desc: Follow logs for one service
+    vars:
+      SERVICE: '{{index .MATCH 0}}'
     cmds:
-      - poetry run python -m tools.compose logs {{.CLI_ARGS}}
+      - poetry run python -m tools.logs follow {{.SERVICE}}
+
+  logs:mcp:
+    desc: Show logs for mcp-server
+    cmds:
+      - poetry run python -m tools.logs logs mcp-server
+
+  follow:mcp:
+    desc: Follow logs for mcp-server
+    cmds:
+      - poetry run python -m tools.logs follow mcp-server
 
   ps:
     desc: Show Ermes services

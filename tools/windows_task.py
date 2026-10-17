@@ -106,6 +106,30 @@ def run_windows_task(
     return result.returncode
 
 
+def capture_windows_task(
+    service: str,
+    args: list[str],
+) -> subprocess.CompletedProcess[str]:
+
+    task_executable = get_task_executable()
+    task_dir = get_service_task_dir(service)
+
+    command = [
+        task_executable,
+        "--silent",
+        "--dir",
+        task_dir,
+        *args,
+    ]
+
+    return subprocess.run(
+        command,
+        check=False,
+        cwd="/mnt/c",
+        capture_output=True,
+        text=True,
+    )
+
 def main() -> int:
     if len(sys.argv) < 2:
         print(
