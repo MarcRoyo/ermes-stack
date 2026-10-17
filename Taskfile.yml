@@ -25,10 +25,10 @@ tasks:
       - poetry run python -m tools.compose down
 
   build:
-    desc: Build Ermes services
-    deps:
-      - prepare:mcp
+    desc: Build all Ermes services
     cmds:
+      - task: audio:build
+      - task: prepare:mcp
       - poetry run python -m tools.compose build
 
   follow:
@@ -55,3 +55,47 @@ tasks:
     desc: Show resolved Docker Compose configuration
     cmds:
       - poetry run python -m tools.compose config
+
+  audio:
+    desc: Run an AudioServer Windows task
+    cmds:
+      - poetry run python -m tools.windows_task audioserver {{.CLI_ARGS}}
+
+  audio:build:
+    desc: Build Windows AudioServer
+    cmds:
+      - poetry run python -m tools.windows_task audioserver build
+
+  audio:run:
+    desc: Start Windows AudioServer
+    cmds:
+      - poetry run python -m tools.windows_task audioserver run
+
+  audio:stop:
+    desc: Stop Windows AudioServer
+    cmds:
+      - poetry run python -m tools.windows_task audioserver stop
+
+  audio:status:
+    desc: Show Windows AudioServer status
+    cmds:
+      - poetry run python -m tools.windows_task audioserver status
+
+  run:
+    desc: Start complete Ermes environment
+    cmds:
+      - task: audio:run
+      - task: up
+
+  stop:
+    desc: Stop complete Ermes environment
+    cmds:
+      - defer:
+          task: audio:stop
+      - task: down
+
+  restart:
+    desc: Restart complete Ermes environment
+    cmds:
+      - task: stop
+      - task: run

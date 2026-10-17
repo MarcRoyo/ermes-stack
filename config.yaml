@@ -1,3 +1,10 @@
 env:
   ERMES_DATA_ROOT: /home/mroyo/.local/share/ermes
   DOCKER_VOLUME_DIRECTORY: /home/mroyo/.local/share/ermes/milvus
+
+windows:
+  task_executable: 'C:\Users\marcr\AppData\Local\Microsoft\WinGet\Packages\Task.Task_Microsoft.Winget.Source_8wekyb3d8bbwe\task.exe'
+
+  services:
+    audioserver:
+      task_dir: 'C:\root\code\go\src\github.com\MarcRoyo\ermes-audioserver'
