@@ -27,10 +27,6 @@
     {
       "name": "llamacpp",
       "path": "../ermes-llamacpp"
-    },
-    {
-      "name": "llama.cpp",
-      "path": "../../ggml-org/llama.cpp"
     }
   ],
 
