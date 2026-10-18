@@ -19,6 +19,18 @@
     {
       "name": "agents",
       "path": "../ermes-agents"
+    },
+    {
+      "name": "tts",
+      "path": "../ermes-tts"
+    },
+    {
+      "name": "llamacpp",
+      "path": "../ermes-llamacpp"
+    },
+    {
+      "name": "llama.cpp",
+      "path": "../../ggml-org/llama.cpp"
     }
   ],
 

@@ -71,9 +71,9 @@ tasks:
       - poetry run python -m tools.compose ps
  
   status:
-    desc: Show Ermes services status
+    desc: Show complete Ermes services status
     cmds:
-      - poetry run python -m tools.compose status
+      - poetry run python -m tools.status
 
   compose:config:
     desc: Show resolved Docker Compose configuration

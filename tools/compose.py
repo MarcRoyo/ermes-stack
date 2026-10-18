@@ -91,6 +91,8 @@ def init_data(config: dict[str, Any]) -> None:
         data_root / "config-agent" / "data",
         data_root / "config-agent" / "training",
         data_root / "mcp" / "mcp-delta-data",
+        data_root / "tts" / "data",
+        data_root / "models",
 
         milvus_root / "volumes" / "etcd",
         milvus_root / "volumes" / "minio",
@@ -230,7 +232,8 @@ def get_compose_ps(
 
     return containers
 
-def show_status(config: dict[str, Any]) -> int:
+def get_status_rows(config: dict[str, Any]) -> list[tuple[str, str, str]]:
+
     env = build_environment(config)
 
     services = get_compose_services(env)
@@ -310,6 +313,10 @@ def show_status(config: dict[str, Any]) -> int:
                 detail,
             )
         )
+    
+    return rows
+
+def print_status_rows(rows: list[tuple[str, str, str]]) -> int:
 
     service_width = max(
         len("SERVICE"),
@@ -391,6 +398,10 @@ def show_status(config: dict[str, Any]) -> int:
 
     # Informational command: never fail Task.
     return 0
+
+def show_status(config: dict[str, Any]) -> int:
+    rows = get_status_rows(config)
+    return print_status_rows(rows)
 
 def main() -> int:
     try:

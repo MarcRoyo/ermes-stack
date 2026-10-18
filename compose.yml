@@ -1,4 +1,13 @@
 services:
+  tts:
+    build:
+      context: ../ermes-tts/services/tts
+      dockerfile: Dockerfile
+    volumes:
+      - ${ERMES_DATA_ROOT}/tts/data:/home/user/app/data
+    ports:
+      - "7860:7860"
+      - "8000:8000"
   music-agent:
     build:
       context: ../ermes-agents/agents/music-agent
@@ -100,6 +109,66 @@ services:
 
       minio:
         condition: service_healthy
+        
+  llama-server:
+    image: ermes-llamacpp:cuda12.9-sm61
+    pull_policy: never
+    
+    build:
+      context: ../ermes-llamacpp
+      dockerfile: Dockerfile
+      args:
+        CUDA_VERSION: "12.9.1"
+        UBUNTU_VERSION: "24.04"
+        CUDA_ARCH: "61"
+        LLAMA_CPP_REF: "master"
+        BUILD_JOBS: "1"
+
+
+
+    restart: unless-stopped
+
+    ports:
+      - "8081:8081"
+
+    volumes:
+      - ${ERMES_DATA_ROOT}/models:/models:ro
+
+    command:
+      - -m
+      - /models/${LLAMA_MODEL_FILE}
+      - --mmproj
+      - /models/${LLAMA_MMPROJ_FILE}
+      - --n-gpu-layers
+      - ${LLAMA_GPU_LAYERS}
+      - --jinja
+      - --embeddings
+      - --pooling
+      - cls
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8081"
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities:
+                - gpu
+
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -fsS
+        - http://127.0.0.1:8081/health
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
 
 networks:
   default:
