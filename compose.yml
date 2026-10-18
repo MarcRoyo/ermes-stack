@@ -1,4 +1,35 @@
 services:
+  orchestrator:
+    image: ermes-orchestrator:latest
+    pull_policy: never
+
+    build:
+      context: ../ermes-orchestrator
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    environment:
+      AGENT_CARD_URL: ${AGENT_CARD_URL}
+      GRPC_ENDPOINT: ${GRPC_ENDPOINT:-}
+
+    ports:
+      - "8090:8090"
+
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >
+          import urllib.request;
+          urllib.request.urlopen(
+          'http://127.0.0.1:8090/health'
+          )
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
   tts:
     build:
       context: ../ermes-tts/services/tts

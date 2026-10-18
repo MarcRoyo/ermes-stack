@@ -8,10 +8,14 @@
     //   "name": "gateway",
     //   "path": "../ermes-gateway"
     // },
-    // {
-    //   "name": "orchestrator",
-    //   "path": "../ermes-orchestrator"
-    // },
+     {
+      "name": "cli",
+      "path": "../ermes-cli"
+    },
+    {
+      "name": "orchestrator",
+      "path": "../ermes-orchestrator"
+    },
     {
       "name": "mcp",
       "path": "../ermes-mcp"
