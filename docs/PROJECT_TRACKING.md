@@ -6,4 +6,5 @@
 - DONE - hacer que task status me permita ver tambien el audioserver. igual audioserver tendria que mostrarse en minusculas.
 - DONE - testear task build con audioserver
 - DONE - luego mirar el servicio de aina
-- arrancar el servicio del modelo con llama-cpp
+- DONE - arrancar el servicio del modelo con llama-cpp
+- migrar assistant. el orchestrator esta restarting.

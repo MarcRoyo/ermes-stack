@@ -14,6 +14,12 @@ tasks:
     cmds:
       - task prepare
 
+  prepare:orchestrator:
+    desc: Prepare orchestrator
+    dir: ../ermes-orchestrator
+    cmds:
+      - task prepare
+
   up:
     desc: Start Ermes services
     cmds:
@@ -30,6 +36,19 @@ tasks:
       - task: audio:build
       - task: prepare:mcp
       - poetry run python -m tools.compose build
+  
+  "build:*":
+    desc: Build a single Ermes service
+    vars:
+      SERVICE: '{{index .MATCH 0}}'
+    cmds:
+      - poetry run python -m tools.compose build {{.SERVICE}}
+
+  build:orchestrator:
+    desc: Build orchestrator
+    cmds:
+      - task: prepare:orchestrator
+      - poetry run python -m tools.compose build orchestrator
 
   logs:
     desc: Show Ermes logs
