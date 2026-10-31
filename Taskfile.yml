@@ -23,7 +23,14 @@ tasks:
   up:
     desc: Start Ermes services
     cmds:
-      - poetry run python -m tools.compose up -d
+      - poetry run python -m tools.compose up -d --force-recreate
+
+  "up:*":
+    desc: Start/recreate a single Ermes service
+    vars:
+      SERVICE: '{{index .MATCH 0}}'
+    cmds:
+      - poetry run python -m tools.compose up -d --force-recreate --no-deps {{.SERVICE}}
 
   down:
     desc: Stop Ermes services
@@ -142,3 +149,13 @@ tasks:
     cmds:
       - task: stop
       - task: run
+
+  clean:docker:
+    desc: Clean unused Docker build cache
+    cmds:
+      - docker builder prune -f
+      
+  clean:docker:all:
+    desc: Remove all unused Docker build cache
+    cmds:
+      - docker builder prune -a -f

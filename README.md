@@ -65,7 +65,12 @@ The stack is currently intended to run under Linux / WSL2.
 Install poetry
 
 ```bash
-sudo apt install python3-poetry
+sudo apt update
+sudo apt install -y pipx
+pipx ensurepath
+exec $SHELL
+pipx install poetry
+
 ```
 
 ## Install Python dependencies

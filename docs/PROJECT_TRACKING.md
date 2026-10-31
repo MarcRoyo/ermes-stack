@@ -7,4 +7,7 @@
 - DONE - testear task build con audioserver
 - DONE - luego mirar el servicio de aina
 - DONE - arrancar el servicio del modelo con llama-cpp
-- migrar assistant. el orchestrator esta restarting.
+- migrar assistant. el orchestrator esta restarting. estic deprecant sounddevice library i he trobat que hi ha 3 possibles candidats a deprecar: recording.py
+simulstreaming_whisper_server.py
+whisper_streaming/whisper_server.py
+falta importar dependencias. Ahora soundfile. Antes tendriamos que mirar de recuperar el disco que se ha vuelto a quedar sin espacio
