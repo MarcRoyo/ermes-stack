@@ -25,6 +25,13 @@ tasks:
     cmds:
       - poetry run python -m tools.compose up -d --force-recreate
 
+  up:audioserver:
+    desc: Start/recreate Windows AudioServer
+    aliases:
+      - run:audioserver
+    cmds:
+      - poetry run python -m tools.windows_task audioserver restart
+
   "up:*":
     desc: Start/recreate a single Ermes service
     vars:
@@ -36,13 +43,31 @@ tasks:
     desc: Stop Ermes services
     cmds:
       - poetry run python -m tools.compose down
+  
+  stop:audioserver:
+    desc: Stop Windows AudioServer
+    aliases:
+      - audio:stop
+    cmds:
+      - poetry run python -m tools.windows_task audioserver stop
 
   build:
     desc: Build all Ermes services
     cmds:
-      - task: audio:build
+      - task: build:audioserver
       - task: prepare:mcp
       - poetry run python -m tools.compose build
+
+  build:audioserver:
+    desc: Build Windows AudioServer
+    cmds:
+      - poetry run python -m tools.windows_task audioserver build
+
+  build:orchestrator:
+    desc: Build orchestrator
+    cmds:
+      - task: prepare:orchestrator
+      - poetry run python -m tools.compose build orchestrator
   
   "build:*":
     desc: Build a single Ermes service
@@ -50,12 +75,6 @@ tasks:
       SERVICE: '{{index .MATCH 0}}'
     cmds:
       - poetry run python -m tools.compose build {{.SERVICE}}
-
-  build:orchestrator:
-    desc: Build orchestrator
-    cmds:
-      - task: prepare:orchestrator
-      - poetry run python -m tools.compose build orchestrator
 
   logs:
     desc: Show Ermes logs
@@ -111,30 +130,10 @@ tasks:
     cmds:
       - poetry run python -m tools.windows_task audioserver {{.CLI_ARGS}}
 
-  audio:build:
-    desc: Build Windows AudioServer
-    cmds:
-      - poetry run python -m tools.windows_task audioserver build
-
-  audio:run:
-    desc: Start Windows AudioServer
-    cmds:
-      - poetry run python -m tools.windows_task audioserver run
-
-  audio:stop:
-    desc: Stop Windows AudioServer
-    cmds:
-      - poetry run python -m tools.windows_task audioserver stop
-
-  audio:status:
-    desc: Show Windows AudioServer status
-    cmds:
-      - poetry run python -m tools.windows_task audioserver status
-
   run:
     desc: Start complete Ermes environment
     cmds:
-      - task: audio:run
+      - task: run:audioserver
       - task: up
 
   stop:
@@ -149,6 +148,12 @@ tasks:
     cmds:
       - task: stop
       - task: run
+
+  restart:audioserver:
+    desc: Restart Windows AudioServer
+    cmds:
+      - task: stop:audioserver
+      - task: up:audioserver
 
   clean:docker:
     desc: Clean unused Docker build cache
