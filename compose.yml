@@ -12,6 +12,11 @@ services:
     environment:
       AGENT_CARD_URL: ${AGENT_CARD_URL}
       GRPC_ENDPOINT: ${GRPC_ENDPOINT:-}
+      MCP_SERVER_URL: ${MCP_SERVER_URL}
+      MUSIC_AGENT_URL: ${MUSIC_AGENT_URL}
+      CONFIG_AGENT_URL: ${CONFIG_AGENT_URL}
+      LLAMA_BASE_URL: ${LLAMA_BASE_URL}
+      TTS_BASE_URL: ${TTS_BASE_URL}
 
     ports:
       - "8090:8090"
@@ -30,15 +35,40 @@ services:
       timeout: 5s
       retries: 10
       start_period: 20s
+    depends_on:
+      mcp-server:
+        condition: service_healthy
+      llama-server:
+        condition: service_healthy
+      tts:
+        condition: service_healthy
+      music-agent:
+        condition: service_healthy
+      config-agent:
+        condition: service_healthy
+        
   tts:
     build:
       context: ../ermes-tts/services/tts
       dockerfile: Dockerfile
     volumes:
       - ${ERMES_DATA_ROOT}/tts/data:/home/user/app/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import socket; s=socket.create_connection(('127.0.0.1',8000),2); s.close()"
+        ]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
     ports:
       - "7860:7860"
       - "8000:8000"
+
   music-agent:
     build:
       context: ../ermes-agents/agents/music-agent
@@ -47,31 +77,72 @@ services:
       - PULSE_SERVER=unix:/tmp/pulse/native
       - SDL_AUDIODRIVER=dummy #pulseaudio
       - XDG_RUNTIME_DIR=/tmp/.xdg_runtime_dir
+      - MCP_SERVER_URL=${MCP_SERVER_URL}
     volumes:
       - ${ERMES_DATA_ROOT}/music-agent/data:/home/user/app/data
       - /mnt/wslg/:/mnt/wslg/
       - /mnt/wslg/PulseServer:/tmp/pulse/native:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9999/.well-known/agent-card.json', timeout=2)"
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
     ports:
       - "9999:9999"
     # PulseAudio access via WSLg socket is provided through /mnt/wslg mount
+
   config-agent:
     build:
       context: ../ermes-agents/agents/config-agent
       dockerfile: Dockerfile
+    environment:
+      - MCP_SERVER_URL=${MCP_SERVER_URL}
     volumes:
       - ${ERMES_DATA_ROOT}/config-agent/data:/home/user/app/data
       - ${ERMES_DATA_ROOT}/config-agent/training:/home/user/app/training_data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9998/.well-known/agent-card.json', timeout=2)"
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
     ports:
       - "9998:9998"
     depends_on:
       standalone:
         condition: service_healthy
+
   mcp-server:
     build:
       context: ../ermes-mcp
       dockerfile: Dockerfile
     volumes:
       - ${ERMES_DATA_ROOT}/mcp/mcp-delta-data:/home/user/app/delta_data
+    healthcheck:
+        test:
+          [
+            "CMD",
+            "python",
+            "-c",
+            "import socket; s=socket.create_connection(('127.0.0.1',8182),2); s.close()"
+          ]
+        interval: 2s
+        timeout: 3s
+        retries: 15
+        start_period: 5s
     ports:
       - "8182:8182"
     depends_on:
@@ -144,7 +215,6 @@ services:
   llama-server:
     image: ermes-llamacpp:cuda12.9-sm61
     pull_policy: never
-    
     build:
       context: ../ermes-llamacpp
       dockerfile: Dockerfile
@@ -154,17 +224,11 @@ services:
         CUDA_ARCH: "61"
         LLAMA_CPP_REF: "master"
         BUILD_JOBS: "1"
-
-
-
     restart: unless-stopped
-
     ports:
       - "8081:8081"
-
     volumes:
       - ${ERMES_DATA_ROOT}/models:/models:ro
-
     command:
       - -m
       - /models/${LLAMA_MODEL_FILE}
@@ -180,7 +244,6 @@ services:
       - "0.0.0.0"
       - --port
       - "8081"
-
     deploy:
       resources:
         reservations:
@@ -189,7 +252,6 @@ services:
               count: 1
               capabilities:
                 - gpu
-
     healthcheck:
       test:
         - CMD

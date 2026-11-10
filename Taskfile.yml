@@ -32,6 +32,11 @@ tasks:
     cmds:
       - poetry run python -m tools.windows_task audioserver restart
 
+  up:orchestrator:
+    desc: Start/recreate orchestrator after its dependencies are healthy
+    cmds:
+      - poetry run python -m tools.compose up -d --force-recreate orchestrator
+
   "up:*":
     desc: Start/recreate a single Ermes service
     vars:
