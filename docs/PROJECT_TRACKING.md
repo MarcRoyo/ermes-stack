@@ -11,8 +11,11 @@
 - DONE - falta acabar de arreglar el audioctl perque sigui mes robust. 
 - DONE - tenemos un error en audioserver. no muestra suficientes logs y los logs que muestra no son buenos.
 - DONE - el mcp falla perque no te els intents. haig de fer una mica solida aquesta situació: s'ha de fer un script de init? hauria de fallar el mcp sino te intents?
-- mirar de generar logs al cli, perque no se si falla que pot ser i vull alguna forma facil de generarlos tipus "task". com que es un cli ho haig de pensar.
-- despres d'aixo lo seu seria veure si puc fer sonar la veu de la resposta.
+- DONE - mirar de generar logs al cli, perque no se si falla que pot ser i vull alguna forma facil de generarlos tipus "task". com que es un cli ho haig de pensar.
+- DONE - despres d'aixo lo seu seria veure si puc fer sonar la veu de la resposta. ja funciona la veu. He trobat diversos problemes: la configuracio config.json no era la correcta. no hi habia una forma de comprobar-ho. el audioserver apuntaba a una ruta antiga i al recompilar hi havia 2 processos audioserver.
+- intentar que el audioctl detecti si hi ha mes de un audioserver corrent com a process i escoltant al mateix port i m'avisi. no se si fer que mati l'antic process. potser es que no es el mateix arrancar un process desde de windows que des de linux.
+- migrar el task devices al audioctl, i treure l'script de windows.
+
 - migrar assistant. el orchestrator esta restarting. estic deprecant sounddevice library i he trobat que hi ha 3 possibles candidats a deprecar: recording.py
 simulstreaming_whisper_server.py
 whisper_streaming/whisper_server.py
