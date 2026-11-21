@@ -4,11 +4,15 @@
       "name": "stack",
       "path": "."
     },
-    // {
-    //   "name": "gateway",
-    //   "path": "../ermes-gateway"
-    // },
-     {
+    {
+      "name": "backend",
+      "path": "../ermes-backend"
+    },
+    {
+      "name": "frontend",
+      "path": "../ermes-frontend"
+    },
+    {
       "name": "cli",
       "path": "../ermes-cli"
     },

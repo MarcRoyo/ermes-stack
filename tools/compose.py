@@ -94,6 +94,10 @@ def init_data(config: dict[str, Any]) -> None:
         data_root / "tts" / "data",
         data_root / "models",
 
+        # Frontend development dependencies/cache
+        data_root / "frontend" / "node_modules",
+        data_root / "frontend" / "npm-cache",
+
         milvus_root / "volumes" / "etcd",
         milvus_root / "volumes" / "minio",
         milvus_root / "volumes" / "milvus",

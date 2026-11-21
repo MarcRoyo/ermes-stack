@@ -1,4 +1,59 @@
 services:
+  frontend:
+    build:
+      context: ../ermes-frontend
+      dockerfile: Dockerfile.dev
+
+    ports:
+      - "5173:5173"
+      - "1421:1421"
+
+    environment:
+      VITE_ERMES_BACKEND_URL: http://localhost:8091
+      NPM_CONFIG_CACHE: /root/.npm
+
+    volumes:
+      - ../ermes-frontend:/app
+      - ${ERMES_DATA_ROOT}/frontend/node_modules:/app/node_modules
+      - ${ERMES_DATA_ROOT}/frontend/npm-cache:/root/.npm
+
+    command:
+      - sh
+      - -lc
+      - npm ci && npm run dev -- --host 0.0.0.0 --port 5173
+
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ../ermes-backend
+
+    restart: unless-stopped
+
+    environment:
+      ERMES_ORCHESTRATOR_URL: http://orchestrator:8090
+      ERMES_ALLOWED_ORIGINS: http://localhost:5173
+
+    ports:
+      - "8091:8091"
+
+    depends_on:
+      - orchestrator
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8091/health', timeout=2)"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+      
   orchestrator:
     image: ermes-orchestrator:latest
     pull_policy: never
