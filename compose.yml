@@ -33,6 +33,7 @@ services:
 
     environment:
       ERMES_ORCHESTRATOR_URL: http://orchestrator:8090
+      ERMES_ORCHESTRATOR_WS_URL: ws://orchestrator:8090/v1/ws
       ERMES_ALLOWED_ORIGINS: http://localhost:5173
 
     ports:
@@ -291,6 +292,8 @@ services:
       - /models/${LLAMA_MMPROJ_FILE}
       - --n-gpu-layers
       - ${LLAMA_GPU_LAYERS}
+      - --ctx-size
+      - ${LLAMA_CONTEXT_SIZE:-8192}
       - --jinja
       - --embeddings
       - --pooling

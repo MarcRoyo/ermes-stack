@@ -4,7 +4,8 @@ env:
 
   LLAMA_MODEL_FILE: gemma-3-4b-it/gemma-3-4b-it-Q4_K_M.gguf
   LLAMA_MMPROJ_FILE: gemma-3-4b-it/mmproj-model-f16.gguf
-  LLAMA_GPU_LAYERS: "1"
+  LLAMA_GPU_LAYERS: "auto"
+  LLAMA_CONTEXT_SIZE: "8192"
 
   AGENT_CARD_URL: http://172.28.48.1:9101
   GRPC_ENDPOINT: 172.28.48.1:9100
@@ -14,6 +15,10 @@ env:
   CONFIG_AGENT_URL: http://config-agent:9998
   LLAMA_BASE_URL: http://llama-server:8081
   TTS_BASE_URL: http://tts:8000
+
+  ERMES_ORCHESTRATOR_URL: http://localhost:8090
+  ERMES_ORCHESTRATOR_WS_URL: ws://localhost:8090/v1/ws
+  ERMES_ALLOWED_ORIGINS: http://localhost:5173
 
 windows:
   task_executable: 'C:\Users\marcr\AppData\Local\Microsoft\WinGet\Packages\Task.Task_Microsoft.Winget.Source_8wekyb3d8bbwe\task.exe'
