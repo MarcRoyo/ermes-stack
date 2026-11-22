@@ -16,6 +16,24 @@ The goal of this repository is to provide a single entry point to build, configu
 
 [Project Tracking](docs/PROJECT_TRACKING.md)
 
+## Table of contents
+
+- [Repository structure](#repository-structure)
+- [Requirements](#requirements)
+- [Prerequisites](#prerequisites)
+- [Install Python dependencies](#install-python-dependencies)
+- [Configuration](#configuration)
+- [Persistent data](#persistent-data)
+- [Services](#services)
+- [Common commands](#common-commands)
+- [Docker Compose wrapper](#docker-compose-wrapper)
+- [Milvus](#milvus)
+- [Development workflow](#development-workflow)
+  - [Use the web frontend](#use-the-web-frontend)
+  - [Trace WebSocket traffic](#trace-websocket-traffic)
+  - [Inspect live voice transcripts](#inspect-live-voice-transcripts)
+  - [View logs and stop the stack](#view-logs-and-stop-the-stack)
+- [Local files](#local-files)
 
 ## Repository structure
 
@@ -36,6 +54,8 @@ The application source code itself lives in separate repositories.
 The Docker Compose file currently expects repositories such as:
 
 ```text
+../ermes-frontend/
+../ermes-backend/
 ../ermes-agents/
 ../ermes-mcp/
 ```
@@ -45,6 +65,8 @@ For example:
 ```text
 github.com/MarcRoyo/
 ├── ermes-stack/
+├── ermes-frontend/
+├── ermes-backend/
 ├── ermes-agents/
 └── ermes-mcp/
 ```
@@ -146,6 +168,8 @@ The stack currently contains the following services:
 
 | Service | Description | Port |
 |---|---|---:|
+| `frontend` | Vite chat frontend | `5173` |
+| `backend` | HTTP API and WebSocket gateway | `8091` |
 | `music-agent` | Music agent | `9999` |
 | `config-agent` | Configuration agent | `9998` |
 | `mcp-server` | Ermes MCP server | `8182` |
@@ -303,6 +327,56 @@ task build
 task up
 task status
 ```
+
+### Use the web frontend
+
+After starting the stack with `task up`, open [Ermes Chat](http://localhost:5173/) in your browser. Enter a message and press **Enter** or click **Send**. Use **Shift+Enter** to add a line break. The reply appears as it streams from the backend.
+
+Chat commands and events use the backend WebSocket at `ws://localhost:8091/v1/ws`.
+
+On first startup, the frontend container installs its npm dependencies before serving the page. Check `task logs:frontend` for the Vite startup message. If the page loads but chat reports that the realtime connection is unavailable, check `task logs:backend` as well.
+
+### Trace WebSocket traffic
+
+1. Open [http://localhost:5173/?debugWs=1](http://localhost:5173/?debugWs=1) to enable WebSocket debugging.
+2. In the browser's **Console**, make sure **Info** messages are visible and filter for `[Ermes WS]`.
+3. Send a message. Look for `[Ermes WS] sent` with a `message.commit` payload and `[Ermes WS] received` with `assistant.message.delta` events. Expand each logged object to inspect its fields.
+
+The trace includes message text and is available in the Vite development build. Remove `?debugWs=1` and reload to turn it off.
+
+To check the backend WebSocket from a terminal, run the smoke test from `ermes-backend` with the stack up and the backend's Poetry dependencies installed.
+
+```bash
+cd ../ermes-backend
+task test:ws-smoke
+```
+
+The test connects to `ws://localhost:8091/v1/ws`, synchronizes a session, sends a sample message, and prints events as they arrive.
+
+### Inspect live voice transcripts
+
+AudioServer sends microphone audio as RTP over UDP port `5004`. To direct the recognized speech to one browser session, open [Ermes Chat with tracing](http://localhost:5173/?debugWs=1) and copy the `session_id` from its outgoing `session.sync` event in the Console.
+
+From `ermes-stack`, build and start the orchestrator with that session ID.
+
+```bash
+task build:orchestrator
+ERMES_VOICE_SESSION_ID=ses_your_session_id task up:orchestrator
+```
+
+Keep AudioServer running. Compose publishes UDP port `5004` on `127.0.0.1` by default. In WSL NAT mode, Windows AudioServer sends to the Windows loopback interface. Recreate the orchestrator on the WSL interface and leave the Windows UDP relay running in a terminal.
+
+```bash
+export ERMES_VOICE_RTP_BIND="$(ip -4 -o addr show dev eth0 | awk '{split($4, address, "/"); print address[1]; exit}')"
+ERMES_VOICE_SESSION_ID=ses_your_session_id task up:orchestrator
+task voice:relay
+```
+
+Use `task logs:orchestrator` to check for `Listening for RTP audio` and `New RTP stream`. The first start may download the Whisper model and Silero voice activity detector. Once audio arrives, **Transcripción de voz** shows partial text and updates it when the utterance ends. The Console trace shows the corresponding `voice.transcript.partial` and `voice.transcript.final` events. Speech that appears in this panel does not submit a chat message.
+
+To disable capture, stop the relay with **Ctrl+C** if you started it, then recreate the orchestrator with `ERMES_VOICE_SESSION_ID` unset.
+
+### View logs and stop the stack
 
 During development:
 

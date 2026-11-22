@@ -135,6 +135,11 @@ tasks:
     cmds:
       - poetry run python -m tools.windows_task audioserver {{.CLI_ARGS}}
 
+  voice:relay:
+    desc: Forward Windows AudioServer RTP to WSL in NAT mode
+    cmds:
+      - powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w ./tools/relay_audio_rtp.ps1)" -Destination "$ERMES_VOICE_RTP_BIND"
+
   run:
     desc: Start complete Ermes environment
     cmds:

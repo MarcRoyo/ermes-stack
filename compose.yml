@@ -73,9 +73,11 @@ services:
       CONFIG_AGENT_URL: ${CONFIG_AGENT_URL}
       LLAMA_BASE_URL: ${LLAMA_BASE_URL}
       TTS_BASE_URL: ${TTS_BASE_URL}
+      ERMES_VOICE_SESSION_ID: ${ERMES_VOICE_SESSION_ID:-}
 
     ports:
       - "8090:8090"
+      - "${ERMES_VOICE_RTP_BIND:-127.0.0.1}:5004:5004/udp"
 
     healthcheck:
       test:
