@@ -189,6 +189,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ${ERMES_DATA_ROOT}/mcp/mcp-delta-data:/home/user/app/delta_data
+      - ${ERMES_DATA_ROOT}/config-agent/data:/home/user/app/intent_data:ro
     healthcheck:
         test:
           [
