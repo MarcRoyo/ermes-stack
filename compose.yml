@@ -31,10 +31,16 @@ services:
 
     restart: unless-stopped
 
+    user: "${ERMES_HOST_UID:-1000}:${ERMES_HOST_GID:-1000}"
+
     environment:
+      ERMES_DATA_ROOT: /data
       ERMES_ORCHESTRATOR_URL: http://orchestrator:8090
       ERMES_ORCHESTRATOR_WS_URL: ws://orchestrator:8090/v1/ws
       ERMES_ALLOWED_ORIGINS: http://localhost:5173
+
+    volumes:
+      - ${ERMES_DATA_ROOT}/backend/filestorage:/data/backend/filestorage
 
     ports:
       - "8091:8091"
@@ -71,6 +77,7 @@ services:
       MCP_SERVER_URL: ${MCP_SERVER_URL}
       MUSIC_AGENT_URL: ${MUSIC_AGENT_URL}
       CONFIG_AGENT_URL: ${CONFIG_AGENT_URL}
+      FINANCIAL_AGENT_URL: ${FINANCIAL_AGENT_URL}
       LLAMA_BASE_URL: ${LLAMA_BASE_URL}
       TTS_BASE_URL: ${TTS_BASE_URL}
       ERMES_VOICE_SESSION_ID: ${ERMES_VOICE_SESSION_ID:-}
@@ -103,6 +110,8 @@ services:
       music-agent:
         condition: service_healthy
       config-agent:
+        condition: service_healthy
+      financial-agent:
         condition: service_healthy
         
   tts:
@@ -182,6 +191,27 @@ services:
     depends_on:
       standalone:
         condition: service_healthy
+
+  financial-agent:
+    build:
+      context: ../ermes-agents/agents/financial-agent
+      dockerfile: Dockerfile
+    environment:
+      FINANCIAL_AGENT_URL: ${FINANCIAL_AGENT_URL}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9997/.well-known/agent-card.json', timeout=2)"
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+    ports:
+      - "127.0.0.1:9997:9997"
 
   mcp-server:
     build:

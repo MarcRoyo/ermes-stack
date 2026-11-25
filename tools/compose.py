@@ -50,6 +50,9 @@ def build_environment(config: dict[str, Any]) -> dict[str, str]:
 
     # Values from config.yaml override the current shell environment.
     env.update(config_env)
+    if os.name == "posix":
+        env.setdefault("ERMES_HOST_UID", str(os.getuid()))
+        env.setdefault("ERMES_HOST_GID", str(os.getgid()))
 
     return env
 
@@ -87,6 +90,7 @@ def init_data(config: dict[str, Any]) -> None:
     milvus_root = Path(docker_volume_directory).expanduser().resolve()
 
     directories = [
+        data_root / "backend" / "filestorage",
         data_root / "music-agent" / "data",
         data_root / "config-agent" / "data",
         data_root / "config-agent" / "training",

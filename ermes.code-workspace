@@ -35,6 +35,10 @@
     {
       "name": "llamacpp",
       "path": "../ermes-llamacpp"
+    },
+    {
+      "name": "data",
+      "path": "/home/mroyo/.local/share/ermes"
     }
   ],
 

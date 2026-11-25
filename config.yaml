@@ -13,6 +13,7 @@ env:
   MCP_SERVER_URL: http://mcp-server:8182/mcp
   MUSIC_AGENT_URL: http://music-agent:9999
   CONFIG_AGENT_URL: http://config-agent:9998
+  FINANCIAL_AGENT_URL: http://financial-agent:9997/
   LLAMA_BASE_URL: http://llama-server:8081
   TTS_BASE_URL: http://tts:8000
 

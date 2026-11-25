@@ -172,6 +172,7 @@ The stack currently contains the following services:
 | `backend` | HTTP API and WebSocket gateway | `8091` |
 | `music-agent` | Music agent | `9999` |
 | `config-agent` | Configuration agent | `9998` |
+| `financial-agent` | Sample accounting entries agent | `127.0.0.1:9997` |
 | `mcp-server` | Ermes MCP server | `8182` |
 | `etcd` | Milvus metadata storage | internal |
 | `minio` | Milvus object storage | `9000`, `9001` |
