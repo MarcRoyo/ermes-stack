@@ -248,12 +248,22 @@ class DraftCancelCommand(CommandEnvelope):
 
 ### 6.4 `message.commit`
 
+Commands carry attachment UUIDs as `attachments: [{"file_id": "..."}]`.
+The orchestrator resolves them against completed uploads in the session
+before publishing `message.committed`. Committed events and routing nodes
+receive the resolved metadata in the original order.
+
 ```python
+class AttachmentReference(BaseModel):
+    file_id: UUID
+
+
 class MessageCommitPayload(BaseModel):
     draft_id: str | None = None
     revision: int | None = None
     source: Literal["keyboard"]
     text: str
+    attachments: list[AttachmentReference] = Field(default_factory=list, max_length=10)
 
 
 class MessageCommitCommand(CommandEnvelope):
@@ -376,12 +386,22 @@ The orchestrator still decides whether the utterance is valid.
 
 ### 8.3 `message.committed`
 
+Each attachment includes its server-resolved UUID (`id`), filename
+(`name`), and byte count (`size`).
+
 ```python
+class FileAttachment(BaseModel):
+    id: UUID
+    name: str
+    size: int
+
+
 class MessageCommittedPayload(BaseModel):
     message_id: str
     source: Literal["keyboard", "voice"]
     text: str
     utterance_id: str | None = None
+    attachments: list[FileAttachment] = Field(default_factory=list, max_length=10)
 
 
 class MessageCommittedEvent(EventEnvelope):
@@ -830,6 +850,41 @@ The command handler should not wait for the full assistant generation before ret
 Generation should run as an asynchronous task owned by the runtime/session.
 
 ---
+
+### Attached files
+
+The routing graph carries the user text and attachment metadata in its
+per-message arguments. Messages with attachments select
+`read_attached_file` by default. Messages starting with an import command such
+as “Import attached file” or “Importa el fitxer adjunt” select
+`import_attached_file`. The financial agent receives the original
+text in an A2A text part and the skill, session ID, and file references in a
+data part. The orchestrator and financial agent mount backend upload storage
+read-only. The financial agent returns UTF-8 text files as fenced Markdown
+and legacy Excel `.xls` worksheets as Markdown tables. For the supported
+bank statement layout, the agent renders account details and movements in
+separate tables. The combined text and worksheet content is limited to
+256 KiB per message.
+
+The import skill validates the supported `.xls` layout and appends one row
+per movement to the `journal_entries` Delta table. It copies account metadata
+onto each movement and records `imported_at` in UTC. Exact workbook
+reuploads are skipped using a content fingerprint recorded in the same Delta
+commit. Compose stores the table at
+`${ERMES_DATA_ROOT}/financial-agent/data/journal_entries`. Run `task init:data`
+to prepare the writable directory before starting the updated financial agent.
+
+### Journal queries
+
+A filtered or analytical accounting question routes to
+`query_journal_entries` on the financial agent. The A2A text part carries the
+original question. The data part identifies the skill. The financial agent
+sends the question and schema to the configured llama server to generate SQL,
+then runs a validated, read-only SELECT against a snapshot of
+`journal_entries` in DuckDB. The model request contains no table rows. Results
+return as Markdown through the existing assistant message events, with up to
+200 rows per response. A month without a year uses the current year in
+`Europe/Madrid` by default.
 
 ## 18. Voice message flow
 

@@ -81,6 +81,10 @@ services:
       LLAMA_BASE_URL: ${LLAMA_BASE_URL}
       TTS_BASE_URL: ${TTS_BASE_URL}
       ERMES_VOICE_SESSION_ID: ${ERMES_VOICE_SESSION_ID:-}
+      ERMES_ATTACHMENT_ROOT: /attachments
+
+    volumes:
+      - ${ERMES_DATA_ROOT}/backend/filestorage:/attachments:ro
 
     ports:
       - "8090:8090"
@@ -196,8 +200,15 @@ services:
     build:
       context: ../ermes-agents/agents/financial-agent
       dockerfile: Dockerfile
+    user: "${ERMES_HOST_UID:-1000}:${ERMES_HOST_GID:-1000}"
     environment:
       FINANCIAL_AGENT_URL: ${FINANCIAL_AGENT_URL}
+      ERMES_ATTACHMENT_ROOT: /attachments
+      ERMES_FINANCIAL_DATA_ROOT: /data
+      LLAMA_BASE_URL: ${LLAMA_BASE_URL}
+    volumes:
+      - ${ERMES_DATA_ROOT}/backend/filestorage:/attachments:ro
+      - ${ERMES_DATA_ROOT}/financial-agent/data:/data
     healthcheck:
       test:
         [

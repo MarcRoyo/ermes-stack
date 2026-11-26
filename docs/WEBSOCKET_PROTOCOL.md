@@ -456,14 +456,30 @@ Example:
     "draft_id": "draft_017",
     "revision": 5,
     "source": "keyboard",
-    "text": "Explain how a neural network works"
+    "text": "Read the attached file.",
+    "attachments": [
+      { "file_id": "df9e83ed-fa83-43fb-90c1-524ae40d34f3" }
+    ]
   }
 }
 ```
 
-The complete text is included even if the server already knows the draft.
+The commit includes the complete text and final attachment list. Attachment
+selection stays local until commit in V1. The `draft.update` payload carries
+text only.
 
-This makes a commit self-contained and auditable.
+`attachments` is an optional ordered array of up to 10 objects with a
+`file_id` field. Omission means an empty array. Clients upload each file over
+HTTP to `POST /v1/filestorage/files` with `filename` and the WebSocket
+`session_id` as query parameters. The upload response provides the UUID for
+`file_id`.
+
+Clients may send `text: ""` with attachments. A commit must contain nonblank
+text or at least one attachment. The server checks that every UUID is unique
+within the command and resolves to a completed upload in the same session.
+If any reference fails validation, the server sends a correlated
+`INVALID_ATTACHMENT` error and rejects the entire commit before starting
+generation.
 
 The server validates the draft revision where applicable and emits:
 
@@ -705,7 +721,14 @@ Keyboard example:
   "payload": {
     "message_id": "msg_042",
     "source": "keyboard",
-    "text": "Play music by Pink Floyd"
+    "text": "Read the attached file.",
+    "attachments": [
+      {
+        "id": "df9e83ed-fa83-43fb-90c1-524ae40d34f3",
+        "name": "accounts.csv",
+        "size": 384
+      }
+    ]
   }
 }
 ```
@@ -736,6 +759,10 @@ keyboard ─┐
           ├──► message.committed
 voice ────┘
 ```
+
+The event includes the server-resolved attachment metadata in command order.
+Live delivery and replay carry the same metadata. Consumers should treat an
+omitted attachments field in older events as an empty array.
 
 After this point, message processing should not depend on the original input source unless explicitly required.
 
@@ -951,6 +978,7 @@ Initial error codes may include:
 ```text
 INVALID_MESSAGE
 INVALID_SESSION
+INVALID_ATTACHMENT
 
 DRAFT_NOT_FOUND
 DRAFT_REVISION_CONFLICT

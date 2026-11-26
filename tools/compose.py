@@ -92,6 +92,7 @@ def init_data(config: dict[str, Any]) -> None:
     directories = [
         data_root / "backend" / "filestorage",
         data_root / "music-agent" / "data",
+        data_root / "financial-agent" / "data",
         data_root / "config-agent" / "data",
         data_root / "config-agent" / "training",
         data_root / "mcp" / "mcp-delta-data",
